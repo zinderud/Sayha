@@ -14,6 +14,8 @@ Windows: FFmpeg'i [indirin](https://ffmpeg.org/download.html) ve PATH'e ekleyin.
 ```
 pip install yt-dlp pydub pysrt
 pip install webvtt-py
+pip install librosa matplotlib transformers
+pip install soundfile audioread
 ```
 çalıştırma
 ## 
