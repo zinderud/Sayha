@@ -17,9 +17,8 @@ pip install webvtt-py
 ```
 çalıştırma
 ## 
-```python youtube_splitter_tr.py "YOUTUBE_VIDEO_URL"
-
-
+```
+python youtube_splitter_tr.py "YOUTUBE_VIDEO_URL"
  ```
  json formatında çıktı olarak alma
  
