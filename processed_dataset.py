@@ -19,6 +19,9 @@ os.makedirs(output_folder, exist_ok=True)
 # Veri setini tutacak liste
 dataset = []
 
+# Video kimliğini al (örneğin, klasör adından)
+video_id = os.path.basename(os.path.normpath(input_folder))
+
 # Klasörleri ve dosyaları tarama
 for root, dirs, files in os.walk(input_folder):
     for file in files:
@@ -43,7 +46,17 @@ for root, dirs, files in os.walk(input_folder):
                 librosa.display.specshow(librosa.power_to_db(spectrogram, ref=np.max), y_axis='mel', x_axis='time')
                 plt.colorbar(format='%+2.0f dB')
                 plt.title('Mel Spectrogram')
-                spectrogram_path = os.path.join(output_folder, f"{file}_spectrogram.png")
+                
+                # Mevcut spektrogram dosyalarını kontrol et ve bir sonraki sıradaki numarayı belirle
+                existing_spectrogram_files = [f for f in os.listdir(output_folder) if f.endswith("_spectrogram.png")]
+                next_file_number = len(existing_spectrogram_files) + 1
+                
+                # Dosya adındaki numarayı al (örneğin, "002" gibi)
+                file_number = file.split("_")[0]  # Dosya adındaki ilk kısmı al (örneğin, "002")
+                
+                # Dosya ismini oluştur (sıralı numara ile dosya adındaki numarayı eşleştir)
+                spectrogram_filename = f"{next_file_number:07d}_{file_number}_{'_'.join(file.split('_')[1:])}_spectrogram.png"
+                spectrogram_path = os.path.join(output_folder, spectrogram_filename)
                 plt.savefig(spectrogram_path)
                 plt.close()
                 
@@ -66,8 +79,13 @@ for root, dirs, files in os.walk(input_folder):
             except Exception as e:
                 print(f"Hata: {audio_path} işlenirken bir sorun oluştu. Hata mesajı: {e}")
 
+# JSON dosyası için sıralı bir isim oluştur (video kimliği eklenmeden)
+existing_json_files = [f for f in os.listdir(output_folder) if f.endswith(".json")]
+next_file_number = len(existing_json_files) + 1
+output_json_filename = f"{next_file_number:07d}_processed_dataset.json"
+output_json_path = os.path.join(output_folder, output_json_filename)
+
 # Veri setini JSON dosyası olarak kaydet
-output_json_path = os.path.join(output_folder, "processed_dataset.json")
 with open(output_json_path, "w", encoding="utf-8") as f:
     json.dump(dataset, f, ensure_ascii=False, indent=4)
 
