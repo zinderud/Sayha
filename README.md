@@ -60,6 +60,4 @@ Spektrogram veya MFCC özelliklerini bir sinir ağına girdi olarak verebilirsin
 Tokenize edilmiş metinleri, metin üretme veya dil modeli eğitimi için kullanabilirsiniz.
 
 ## Kalan aşamalar
-1.Veri cekimleri youtube listeleri halinde yapmak
- 
-3. Veri setinizi Hugging Face'e yükle
+Bir ai agent ile otomatik olarak veri ekleme yapmak
