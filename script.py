@@ -1,6 +1,7 @@
 import os
 import subprocess
 import glob
+import sys
 
 def get_next_file_number(output_folder):
     """processed_output klasöründeki dosyalara bakarak bir sonraki dosya numarasını belirler."""
@@ -27,16 +28,18 @@ def main(youtube_url):
     output_folder = "processed_output"
     os.makedirs(output_folder, exist_ok=True)
     
-    # youtube_splitter_tr.py'yi çalıştır
-    run_youtube_splitter(youtube_url)
-    
-    # processed_dataset.py'yi çalıştır
-    run_processed_dataset()
-    
-    print(f"İşlem tamamlandı! Dosyalar '{output_folder}' klasörüne kaydedildi.")
+    try:
+        # youtube_splitter_tr.py'yi çalıştır
+        run_youtube_splitter(youtube_url)
+        
+        # processed_dataset.py'yi çalıştır
+        run_processed_dataset()
+        
+        print(f"İşlem tamamlandı! Dosyalar '{output_folder}' klasörüne kaydedildi.")
+    except subprocess.CalledProcessError as e:
+        print(f"Hata: Video daha önce indirilmiş veya başka bir sorun oluştu. Hata mesajı: {e}")
 
 if __name__ == "__main__":
-    import sys
     if len(sys.argv) != 2:
         print("Kullanım: python script.py <youtube_link>")
     else:

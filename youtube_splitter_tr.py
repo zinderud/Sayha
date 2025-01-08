@@ -126,7 +126,7 @@ def delete_temp_files(audio_file, subtitle_file):
 
 def main():
     if len(sys.argv) != 2:
-        print("Kullanım: python script.py <youtube_link>")
+        print("Kullanım: python youtube_splitter_tr.py <youtube_link>")
         return
 
     youtube_url = sys.argv[1]
@@ -140,7 +140,7 @@ def main():
     # Video daha önce indirilmiş mi kontrol et
     if check_if_video_downloaded(video_id):
         print(f"Uyarı: Bu video daha önce indirilmiş! (Video ID: {video_id})")
-        return
+        sys.exit(1)  # Programı burada durdur
 
     # Video ve altyazıyı indir
     audio_file, subtitle_file, video_title = download_video_and_subtitles(youtube_url)
