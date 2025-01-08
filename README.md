@@ -16,6 +16,8 @@ pip install yt-dlp pydub pysrt
 pip install webvtt-py
 pip install librosa matplotlib transformers
 pip install soundfile audioread
+pip install datasets huggingface_hub
+
 ```
 çalıştırma
 ## 
@@ -27,7 +29,11 @@ python youtube_splitter_tr.py "YOUTUBE_VIDEO_URL"
  ```
  python output_Json.py
  ```
- 
+ uploaded hugenface
+  ```
+ python upload_to_huggingface.py
+
+ ```
 ## Sorunlar
 bazı linkler windowsta uzunluk hatasına sebeb veriyor.
 Oromatik altyazılarda sorunlar mevcut o yüzden veri çekimi için
