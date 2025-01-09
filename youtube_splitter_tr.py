@@ -50,6 +50,10 @@ def download_video_and_subtitles(url):
         'outtmpl': '%(title)s.%(ext)s',
         'quiet': False,
         'no_warnings': False,
+        'cookiesfrombrowser': ('chrome',),
+        'cookiefile': 'cookies.txt',
+        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'referer': 'https://www.youtube.com/',
     }
     
     try:

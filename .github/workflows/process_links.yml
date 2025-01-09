@@ -59,6 +59,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ffmpeg
 
+      - name: Setup YouTube cookies
+        run: |
+          echo 'Creating cookies.txt file...'
+          touch cookies.txt
+          echo '.youtube.com	TRUE	/	TRUE	2147483647	CONSENT	YES+1' >> cookies.txt
+          echo '.youtube.com	TRUE	/	TRUE	2147483647	VISITOR_INFO1_LIVE	random_string' >> cookies.txt
+          echo '.youtube.com	TRUE	/	TRUE	2147483647	GPS	1' >> cookies.txt
+
       - name: Process link
         env:
           HUGGINGFACE_TOKEN: ${{ secrets.HUGGINGFACE_TOKEN }}
