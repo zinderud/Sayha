@@ -1,0 +1,10 @@
+yt-dlp
+librosa
+transformers
+datasets
+huggingface_hub
+matplotlib
+pydub
+webvtt-py
+soundfile
+audioread
