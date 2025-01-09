@@ -36,6 +36,14 @@ def mark_video_as_downloaded(video_id):
 
 def download_video_and_subtitles(url):
     """YouTube'dan video ve altyazı indirir."""
+    # Çerez bilgilerini environment variable'dan al
+    youtube_cookies = os.getenv('YOUTUBE_COOKIES')
+    
+    if youtube_cookies:
+        # Geçici çerez dosyası oluştur
+        with open('cookies.txt', 'w') as f:
+            f.write(youtube_cookies)
+    
     ydl_opts = {
         'format': 'bestaudio/best',
         'postprocessors': [{
@@ -50,7 +58,7 @@ def download_video_and_subtitles(url):
         'outtmpl': '%(title)s.%(ext)s',
         'quiet': False,
         'no_warnings': False,
-        'cookiefile': 'cookies.txt',
+        'cookiefile': 'cookies.txt' if youtube_cookies else None,
         'http_headers': {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',

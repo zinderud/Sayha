@@ -56,6 +56,7 @@ jobs:
       - name: Process link
         env:
           HUGGINGFACE_TOKEN: ${{ secrets.HUGGINGFACE_TOKEN }}
+          YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES }}
         run: |
           echo "Processing link: ${{ matrix.link }}"
 
@@ -93,18 +94,6 @@ jobs:
         with:
           name: error_logs_${{ matrix.link }}
           path: error_logs.txt
-
-      - name: Upload cookies
-        uses: actions/upload-artifact@v3
-        with:
-          name: cookies
-          path: cookies.txt
-
-      - name: Download cookies
-        uses: actions/download-artifact@v3
-        with:
-          name: cookies
-          path: .
 
   notify-failure:
     needs: process-links
