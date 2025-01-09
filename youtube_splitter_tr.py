@@ -43,7 +43,9 @@ def download_video_and_subtitles(url):
         'subtitleslangs': ['tr'],
         'subtitlesformat': 'vtt',
         'outtmpl': 'video.%(ext)s',
-        'cookiesfrombrowser': ('chrome',),
+         # Chrome çerez kullanımını devre dışı bırak
+        'cookiesfrombrowser': None,
+        'ignoreerrors': True,
         'quiet': False,
         'no_warnings': False,
         'extract_flat': False,
