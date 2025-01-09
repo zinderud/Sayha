@@ -31,10 +31,14 @@ def mark_file_as_uploaded(file_name):
 
 def get_new_json_files(output_folder):
     """output/json klasöründeki yeni (yüklenmemiş) JSON dosyalarını bulur."""
+    # Klasör yoksa oluştur
+    os.makedirs(output_folder, exist_ok=True)
+    
     uploaded_files = get_uploaded_files()
     json_files = [f for f in os.listdir(output_folder) if f.endswith(".json")]
     new_files = [f for f in json_files if f not in uploaded_files]
     return new_files
+
 
 def load_data_from_json(json_file):
     """JSON dosyasındaki verileri yükler."""
