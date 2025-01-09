@@ -35,7 +35,6 @@ def mark_video_as_downloaded(video_id):
         file.write(video_id + "\n")
 
 def download_video_and_subtitles(url):
-    """YouTube'dan video ve altyazı indirir."""
     ydl_opts = {
         'format': 'bestaudio/best',
         'postprocessors': [{
@@ -45,55 +44,42 @@ def download_video_and_subtitles(url):
         }],
         'writeautomaticsub': True,
         'subtitlesformat': 'vtt',
-        # Bot kontrolünü aşmak için ek seçenekler
-        'cookiesfrombrowser': ('chrome',),  # Chrome çerezlerini kullan
-        'extractor_retries': 3,  # Yeniden deneme sayısı
+        # Çerez kullanımını tamamen kaldır
+        'cookiesfrombrowser': None,
+        'cookiefile': None,
+        # YouTube API seçenekleri
+        'extract_flat': True,
+        'quiet': False,
+        'no_warnings': False,
+        # Proxy kullanımı (isteğe bağlı)
+        # 'proxy': 'socks5://127.0.0.1:1080',
+        'socket_timeout': 30,
+        'retries': 3,
         'http_headers': {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-us,en;q=0.5',
+            'Sec-Fetch-Mode': 'navigate'
         }
     }
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info_dict = ydl.extract_info(url, download=True)
-        video_title = info_dict.get('title', 'video')
-
-        audio_file = None
-        for file in os.listdir():
-            if file.endswith(".mp3") or file.endswith(".webm") or file.endswith(".m4a"):
-                audio_file = file
-                break
-
-        subtitle_file = None
-        for file in os.listdir():
-            if file.endswith(".vtt") and "tr" in file:
-                subtitle_file = file
-                break
-
-        if not subtitle_file:
-            print("Türkçe altyazı bulunamadı. Otomatik altyazı Türkçe'ye çevriliyor...")
-            ydl_opts_auto = {
-                'format': 'bestaudio/best',
-                'writeautomaticsub': True,
-                'subtitleslangs': ['tr'],
-                'subtitlesformat': 'vtt',
-                'outtmpl': 'video.%(ext)s',
-            }
-            with yt_dlp.YoutubeDL(ydl_opts_auto) as ydl_auto:
-                ydl_auto.download([url])
+    
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            print(f"Video indiriliyor: {url}")
+            info_dict = ydl.extract_info(url, download=True)
             
-            for file in os.listdir():
-                if file.endswith(".vtt") and "tr" in file:
-                    subtitle_file = file
-                    break
-
-        if not audio_file:
-            print("Hata: Ses dosyası bulunamadı!")
-        elif not subtitle_file:
-            print("Hata: Türkçe altyazı dosyası bulunamadı!")
-        else:
-            print(f"Ses dosyası bulundu: {audio_file}")
-            print(f"Altyazı dosyası bulundu: {subtitle_file}")
-
-    return audio_file, subtitle_file, video_title
+            if not info_dict:
+                raise Exception("Video bilgileri alınamadı")
+            
+            video_title = info_dict.get('title', 'video')
+            audio_file = f"{video_title}.mp3"
+            subtitle_file = f"{video_title}.tr.vtt"
+            
+            return audio_file, subtitle_file, video_title
+            
+    except Exception as e:
+        print(f"Hata oluştu: {str(e)}")
+        return None, None, None
 
 def split_audio_by_subtitles(audio_file, subtitle_file, folder_name):
     """Ses dosyasını altyazı aralıklarına göre böler ve kaydeder."""
