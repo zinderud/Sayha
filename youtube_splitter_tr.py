@@ -4,6 +4,8 @@ import sys
 from pydub import AudioSegment
 import webvtt
 import yt_dlp
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 
 
 def sanitize_filename(text):
@@ -35,6 +37,9 @@ def mark_video_as_downloaded(video_id):
         file.write(video_id + "\n")
 
 def download_video_and_subtitles(url):
+    # YouTube API anahtarını environment variable'dan al
+    YOUTUBE_API_KEY = os.getenv('YOUTUBE_API_KEY')
+    
     ydl_opts = {
         'format': 'bestaudio/best',
         'postprocessors': [{
@@ -44,38 +49,42 @@ def download_video_and_subtitles(url):
         }],
         'writeautomaticsub': True,
         'subtitlesformat': 'vtt',
-        # Çerez kullanımını tamamen kaldır
-        'cookiesfrombrowser': None,
-        'cookiefile': None,
-        # YouTube API seçenekleri
-        'extract_flat': True,
         'quiet': False,
         'no_warnings': False,
-        # Proxy kullanımı (isteğe bağlı)
-        # 'proxy': 'socks5://127.0.0.1:1080',
-        'socket_timeout': 30,
-        'retries': 3,
+        'extract_flat': False,
         'http_headers': {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'en-us,en;q=0.5',
-            'Sec-Fetch-Mode': 'navigate'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         }
     }
     
     try:
+        # Video ID'sini URL'den çıkar
+        video_id = url.split('watch?v=')[1]
+        
+        # YouTube API client'ını oluştur
+        youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
+        
+        # Video detaylarını al
+        request = youtube.videos().list(
+            part="snippet",
+            id=video_id
+        )
+        response = request.execute()
+        
+        if not response['items']:
+            raise Exception("Video bulunamadı")
+            
+        video_title = response['items'][0]['snippet']['title']
+        
+        # Video indirme işlemi
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             print(f"Video indiriliyor: {url}")
-            info_dict = ydl.extract_info(url, download=True)
+            ydl.download([url])
             
-            if not info_dict:
-                raise Exception("Video bilgileri alınamadı")
-            
-            video_title = info_dict.get('title', 'video')
-            audio_file = f"{video_title}.mp3"
-            subtitle_file = f"{video_title}.tr.vtt"
-            
-            return audio_file, subtitle_file, video_title
+        audio_file = f"{video_title}.mp3"
+        subtitle_file = f"{video_title}.tr.vtt"
+        
+        return audio_file, subtitle_file, video_title
             
     except Exception as e:
         print(f"Hata oluştu: {str(e)}")
