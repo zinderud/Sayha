@@ -1,12 +1,13 @@
 import os
 import json
-from datasets import Dataset
+from datasets import Dataset, Audio, Image  # Audio ve Image sınıflarını içe aktar
 from huggingface_hub import HfApi, login
 
+
 # Hugging Face token'ınızı buraya ekleyin
-HUGGINGFACE_TOKEN = "your_huggingface_token"
+HUGGINGFACE_TOKEN = "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1"
 # Hugging Face'deki veri setinizin adı
-DATASET_NAME = "your_huggingface_dataset_name"
+DATASET_NAME = "sayha"
 
 # Yüklenen dosyaların listesini tutacak dosya
 UPLOADED_FILES_LOG = "uploaded_to_huggingface.txt"
@@ -39,20 +40,71 @@ def load_data_from_json(json_file):
         data = json.load(f)
     return data
 
-def upload_to_huggingface(data):
+def upload_to_huggingface(data, json_file_name, output_folder):
     """Verileri Hugging Face veri setine yükler."""
     # Verileri Hugging Face Dataset formatına dönüştür
-    dataset = Dataset.from_list(data)
-    
-    # Hugging Face API'sini kullanarak veri setini güncelle
-    api = HfApi()
-    api.upload_file(
-        path_or_fileobj=dataset.to_json(),
-        path_in_repo="data.json",  # Veri setindeki dosya adı
-        repo_id=DATASET_NAME,
-        repo_type="dataset",
-    )
-    print("Veriler Hugging Face'e başarıyla yüklendi!")
+    dataset_dict = {
+        "audio": [],
+        "transcription": [],
+        "spectrogram": [],
+        "mfcc": [],
+        "tokens": [],
+        "token_ids": [],
+    }
+
+    for item in data:
+        # Ses dosyasının yolunu oluştur (output/video_id/...)
+        audio_file = os.path.join("output", os.path.basename(os.path.dirname(item["audio_file"])), os.path.basename(item["audio_file"]))
+        
+        # Ses dosyasını ekle
+        if audio_file and os.path.exists(audio_file):
+            dataset_dict["audio"].append(audio_file)
+        else:
+            print(f"Hata: {audio_file} dosyası bulunamadı!")
+            dataset_dict["audio"].append(None)
+
+        # Transkripsiyon ve diğer bilgileri ekle
+        dataset_dict["transcription"].append(item.get("transcription", ""))
+        dataset_dict["mfcc"].append(item.get("mfcc", []))
+        dataset_dict["tokens"].append(item.get("tokens", []))
+        dataset_dict["token_ids"].append(item.get("token_ids", []))
+
+        # Spektrogram dosyasının yolunu oluştur (processed_output/...)
+        spectrogram_file = os.path.join(output_folder, os.path.basename(item["spectrogram"]))
+        
+        # Spektrogram dosyasını ekle
+        if spectrogram_file and os.path.exists(spectrogram_file):
+            dataset_dict["spectrogram"].append(spectrogram_file)
+        else:
+            print(f"Hata: {spectrogram_file} dosyası bulunamadı!")
+            dataset_dict["spectrogram"].append(None)
+
+    # Dataset oluştur
+    dataset = Dataset.from_dict(dataset_dict)
+
+    # Ses dosyalarını Audio formatına dönüştür
+    try:
+        dataset = dataset.cast_column("audio", Audio())
+    except Exception as e:
+        print(f"Hata: Ses dosyaları Audio formatına dönüştürülürken bir sorun oluştu. Hata mesajı: {e}")
+        return
+
+    # Spektrogramları Image formatına dönüştür
+    try:
+        dataset = dataset.cast_column("spectrogram", Image())
+    except Exception as e:
+        print(f"Hata: Spektrogramlar Image formatına dönüştürülürken bir sorun oluştu. Hata mesajı: {e}")
+        return
+
+    # Hugging Face'e yükle
+    try:
+        dataset.push_to_hub(
+            repo_id=DATASET_NAME,
+            split=json_file_name.replace(".json", ""),  # Veri seti bölümü (split)
+        )
+        print(f"{json_file_name} ve ilgili dosyalar Hugging Face'e başarıyla yüklendi!")
+    except Exception as e:
+        print(f"Hata: Veriler Hugging Face'e yüklenirken bir sorun oluştu. Hata mesajı: {e}")
 
 def main():
     output_folder = "processed_output"
@@ -70,11 +122,10 @@ def main():
         data = load_data_from_json(json_path)
         
         # Verileri Hugging Face'e yükle
-        upload_to_huggingface(data)
+        upload_to_huggingface(data, json_file, output_folder)
         
         # Dosyayı yüklenenler listesine ekle
         mark_file_as_uploaded(json_file)
-        print(f"{json_file} dosyası Hugging Face'e yüklendi ve işaretlendi.")
 
 if __name__ == "__main__":
     main()
