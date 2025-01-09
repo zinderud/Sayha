@@ -4,8 +4,6 @@ import sys
 from pydub import AudioSegment
 import webvtt
 import yt_dlp
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
 
 
 def sanitize_filename(text):
