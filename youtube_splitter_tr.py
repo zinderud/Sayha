@@ -50,11 +50,7 @@ def download_video_and_subtitles(url):
         'outtmpl': '%(title)s.%(ext)s',
         'quiet': False,
         'no_warnings': False,
-        # Bot korumasını aşmak için yeni ayarlar
-        'extract_flat': True,
-        'no_check_certificate': True,
-        'ignoreerrors': True,
-        'no_warnings': True,
+        'cookiefile': 'cookies.txt',
         'http_headers': {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -74,16 +70,8 @@ def download_video_and_subtitles(url):
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             print(f"Video indiriliyor: {url}")
-            # Önce video bilgilerini al
-            info = ydl.extract_info(url, download=False)
-            if info is None:
-                raise Exception("Video bilgileri alınamadı")
-                
-            # Sonra indirme işlemini gerçekleştir
-            ydl_opts['extract_flat'] = False
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl_download:
-                info = ydl_download.extract_info(url, download=True)
-                video_title = info['title']
+            info = ydl.extract_info(url, download=True)
+            video_title = info['title']
             
             # Dosya isimlerini bul
             audio_file = None
