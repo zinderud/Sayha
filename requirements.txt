@@ -8,5 +8,5 @@ pydub
 webvtt-py
 soundfile
 audioread
-webvtt-py 
+webvtt
 torch
