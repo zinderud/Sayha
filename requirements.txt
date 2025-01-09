@@ -6,3 +6,4 @@ huggingface_hub
 pydub
 webvtt-py
 torch
+matplotlib
