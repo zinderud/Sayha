@@ -94,6 +94,18 @@ jobs:
           name: error_logs_${{ matrix.link }}
           path: error_logs.txt
 
+      - name: Upload cookies
+        uses: actions/upload-artifact@v2
+        with:
+          name: cookies
+          path: cookies.txt
+
+      - name: Download cookies
+        uses: actions/download-artifact@v2
+        with:
+          name: cookies
+          path: .
+
   notify-failure:
     needs: process-links
     if: failure()
