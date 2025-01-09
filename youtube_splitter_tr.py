@@ -38,18 +38,19 @@ def download_video_and_subtitles(url):
     """YouTube'dan video ve altyazı indirir."""
     ydl_opts = {
         'format': 'bestaudio/best',
-        'writesubtitles': True,
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+        }],
         'writeautomaticsub': True,
-        'subtitleslangs': ['tr'],
         'subtitlesformat': 'vtt',
-        'outtmpl': 'video.%(ext)s',
-         # Chrome çerez kullanımını devre dışı bırak
-        'cookiesfrombrowser': None,
-        'ignoreerrors': True,
-        'quiet': False,
-        'no_warnings': False,
-        'extract_flat': False,
-        'force_generic_extractor': False,
+        # Bot kontrolünü aşmak için ek seçenekler
+        'cookiesfrombrowser': ('chrome',),  # Chrome çerezlerini kullan
+        'extractor_retries': 3,  # Yeniden deneme sayısı
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info_dict = ydl.extract_info(url, download=True)
