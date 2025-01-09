@@ -43,6 +43,11 @@ def download_video_and_subtitles(url):
         'subtitleslangs': ['tr'],
         'subtitlesformat': 'vtt',
         'outtmpl': 'video.%(ext)s',
+        'cookiesfrombrowser': ('chrome',),
+        'quiet': False,
+        'no_warnings': False,
+        'extract_flat': False,
+        'force_generic_extractor': False,
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info_dict = ydl.extract_info(url, download=True)
