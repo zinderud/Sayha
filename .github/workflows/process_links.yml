@@ -37,19 +37,10 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Cache pip packages
-        id: pip-cache
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: pip-${{ runner.os }}-${{ hashFiles('requirements.txt') }}
-          restore-keys: |
-            pip-${{ runner.os }}-
-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install yt-dlp librosa transformers datasets huggingface_hub pydub webvtt torch
           sudo apt-get update
           sudo apt-get install -y ffmpeg
 
@@ -84,8 +75,6 @@ jobs:
           python output_Json.py
           python processed_dataset.py
           python upload_to_huggingface.py
-
-          echo "Successfully processed link: ${{ matrix.link }}"
 
       - name: Upload error logs as artifact
         if: failure()
