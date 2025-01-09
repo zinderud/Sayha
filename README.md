@@ -60,4 +60,4 @@ Spektrogram veya MFCC özelliklerini bir sinir ağına girdi olarak verebilirsin
 Tokenize edilmiş metinleri, metin üretme veya dil modeli eğitimi için kullanabilirsiniz.
 
 ## Kalan aşamalar
-Bir ai agent ile otomatik olarak veri ekleme yapmak
+Bu videoları hiç indirmeden  github actions kullanılarak  sadece linkleri vereceğimiz bir txt dosyasını commitleyip bunları otomatik olarak    huggingface  göndermek
