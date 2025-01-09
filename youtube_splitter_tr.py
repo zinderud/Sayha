@@ -4,6 +4,8 @@ import sys
 from pydub import AudioSegment
 import webvtt
 import yt_dlp
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 
 
 def sanitize_filename(text):
@@ -36,45 +38,58 @@ def mark_video_as_downloaded(video_id):
 
 def download_video_and_subtitles(url):
     """YouTube'dan video ve altyazı indirir."""
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '192',
-        }],
-        'writesubtitles': True,
-        'writeautomaticsub': True,
-        'subtitleslangs': ['tr'],
-        'subtitlesformat': 'vtt',
-        'outtmpl': '%(title)s.%(ext)s',
-        'quiet': False,
-        'no_warnings': False,
-        'cookiesfrombrowser': ('firefox',),  # Firefox çerezlerini kullan
-        'http_headers': {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'Accept-Encoding': 'gzip, deflate',
-            'DNT': '1',
-            'Connection': 'keep-alive',
-            'Upgrade-Insecure-Requests': '1'
-        }
-    }
-    
+    # YouTube API anahtarını al
+    api_key = os.getenv('YOUTUBE_API_KEY')
+    if not api_key:
+        raise Exception("YouTube API anahtarı bulunamadı!")
+
+    # Video ID'yi al
+    video_id = extract_video_id(url)
+    if not video_id:
+        raise Exception("Video ID bulunamadı!")
+
     try:
+        # YouTube API client'ını oluştur
+        youtube = build('youtube', 'v3', developerKey=api_key)
+        
+        # Video detaylarını al
+        request = youtube.videos().list(
+            part="snippet",
+            id=video_id
+        )
+        response = request.execute()
+        
+        if not response['items']:
+            raise Exception("Video bulunamadı!")
+        
+        # yt-dlp ayarları
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            }],
+            'writesubtitles': True,
+            'writeautomaticsub': True,
+            'subtitleslangs': ['tr'],
+            'subtitlesformat': 'vtt',
+            'outtmpl': '%(title)s.%(ext)s',
+            'quiet': False,
+            'no_warnings': False,
+            'extract_flat': True,
+            'force_generic_extractor': False,
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+            }
+        }
+        
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             print(f"Video indiriliyor: {url}")
-            try:
-                # Önce Firefox çerezlerini dene
-                info = ydl.extract_info(url, download=True)
-            except:
-                # Firefox başarısız olursa Chrome'u dene
-                ydl_opts['cookiesfrombrowser'] = ('chrome',)
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl_chrome:
-                    info = ydl_chrome.extract_info(url, download=True)
-            
-            video_title = info['title']
+            info = ydl.extract_info(url, download=True)
+            video_title = response['items'][0]['snippet']['title']
             
             # Dosya isimlerini bul
             audio_file = None
