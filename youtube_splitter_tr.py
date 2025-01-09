@@ -37,9 +37,7 @@ def mark_video_as_downloaded(video_id):
         file.write(video_id + "\n")
 
 def download_video_and_subtitles(url):
-    # YouTube API anahtarını environment variable'dan al
-    YOUTUBE_API_KEY = os.getenv('YOUTUBE_API_KEY')
-    
+    """YouTube'dan video ve altyazı indirir."""
     ydl_opts = {
         'format': 'bestaudio/best',
         'postprocessors': [{
@@ -47,44 +45,37 @@ def download_video_and_subtitles(url):
             'preferredcodec': 'mp3',
             'preferredquality': '192',
         }],
+        'writesubtitles': True,
         'writeautomaticsub': True,
+        'subtitleslangs': ['tr'],
         'subtitlesformat': 'vtt',
+        'outtmpl': '%(title)s.%(ext)s',
         'quiet': False,
         'no_warnings': False,
-        'extract_flat': False,
-        'http_headers': {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        }
     }
     
     try:
-        # Video ID'sini URL'den çıkar
-        video_id = url.split('watch?v=')[1]
-        
-        # YouTube API client'ını oluştur
-        youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
-        
-        # Video detaylarını al
-        request = youtube.videos().list(
-            part="snippet",
-            id=video_id
-        )
-        response = request.execute()
-        
-        if not response['items']:
-            raise Exception("Video bulunamadı")
-            
-        video_title = response['items'][0]['snippet']['title']
-        
-        # Video indirme işlemi
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             print(f"Video indiriliyor: {url}")
-            ydl.download([url])
+            info = ydl.extract_info(url, download=True)
+            video_title = info['title']
             
-        audio_file = f"{video_title}.mp3"
-        subtitle_file = f"{video_title}.tr.vtt"
-        
-        return audio_file, subtitle_file, video_title
+            # Dosya isimlerini bul
+            audio_file = None
+            subtitle_file = None
+            
+            for file in os.listdir():
+                if file.endswith(".mp3"):
+                    audio_file = file
+                elif file.endswith(".tr.vtt"):
+                    subtitle_file = file
+            
+            if not audio_file or not subtitle_file:
+                print(f"Ses dosyası: {audio_file}")
+                print(f"Altyazı dosyası: {subtitle_file}")
+                raise Exception("Ses veya altyazı dosyası bulunamadı")
+                
+            return audio_file, subtitle_file, video_title
             
     except Exception as e:
         print(f"Hata oluştu: {str(e)}")
