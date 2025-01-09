@@ -53,6 +53,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ffmpeg
 
+      - name: Install browsers
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y firefox chromium-browser
+
       - name: Process link
         env:
           HUGGINGFACE_TOKEN: ${{ secrets.HUGGINGFACE_TOKEN }}
