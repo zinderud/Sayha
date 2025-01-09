@@ -1,4 +1,4 @@
- name: Process YouTube Links in Parallel
+name: Process YouTube Links in Parallel
 
 on:
   push:
