@@ -3,9 +3,6 @@ librosa
 transformers
 datasets
 huggingface_hub
-matplotlib
 pydub
-soundfile
-audioread
-webvtt_py
+webvtt-py
 torch
