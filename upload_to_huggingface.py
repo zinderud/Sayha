@@ -1,11 +1,13 @@
 import os
 import json
-from datasets import Dataset, Audio, Image  # Audio ve Image sınıflarını içe aktar
+from datasets import Dataset, Audio, Image
 from huggingface_hub import HfApi, login
 
+# Hugging Face token'ını GitHub Secrets'tan al
+HUGGINGFACE_TOKEN = os.environ.get("HUGGINGFACE_TOKEN")
+if not HUGGINGFACE_TOKEN:
+    raise ValueError("Hugging Face token not found in environment variables!")
 
-# Hugging Face token'ınızı buraya ekleyin
-HUGGINGFACE_TOKEN = "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1"
 # Hugging Face'deki veri setinizin adı
 DATASET_NAME = "sayha"
 
@@ -28,7 +30,7 @@ def mark_file_as_uploaded(file_name):
         f.write(file_name + "\n")
 
 def get_new_json_files(output_folder):
-    """processed_output klasöründeki yeni (yüklenmemiş) JSON dosyalarını bulur."""
+    """output/json klasöründeki yeni (yüklenmemiş) JSON dosyalarını bulur."""
     uploaded_files = get_uploaded_files()
     json_files = [f for f in os.listdir(output_folder) if f.endswith(".json")]
     new_files = [f for f in json_files if f not in uploaded_files]
@@ -53,8 +55,8 @@ def upload_to_huggingface(data, json_file_name, output_folder):
     }
 
     for item in data:
-        # Ses dosyasının yolunu oluştur (output/video_id/...)
-        audio_file = os.path.join("output", os.path.basename(os.path.dirname(item["audio_file"])), os.path.basename(item["audio_file"]))
+        # Ses dosyasının yolunu oluştur (output/audio/...)
+        audio_file = os.path.join("output/audio", os.path.basename(os.path.dirname(item["audio_file"])), os.path.basename(item["audio_file"]))
         
         # Ses dosyasını ekle
         if audio_file and os.path.exists(audio_file):
@@ -69,8 +71,8 @@ def upload_to_huggingface(data, json_file_name, output_folder):
         dataset_dict["tokens"].append(item.get("tokens", []))
         dataset_dict["token_ids"].append(item.get("token_ids", []))
 
-        # Spektrogram dosyasının yolunu oluştur (processed_output/...)
-        spectrogram_file = os.path.join(output_folder, os.path.basename(item["spectrogram"]))
+        # Spektrogram dosyasının yolunu oluştur (output/spectrogram/...)
+        spectrogram_file = os.path.join("output/spectrogram", os.path.basename(item["spectrogram"]))
         
         # Spektrogram dosyasını ekle
         if spectrogram_file and os.path.exists(spectrogram_file):
@@ -107,7 +109,7 @@ def upload_to_huggingface(data, json_file_name, output_folder):
         print(f"Hata: Veriler Hugging Face'e yüklenirken bir sorun oluştu. Hata mesajı: {e}")
 
 def main():
-    output_folder = "processed_output"
+    output_folder = "output/json"
     
     # Yeni (yüklenmemiş) JSON dosyalarını bul
     new_json_files = get_new_json_files(output_folder)
