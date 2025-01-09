@@ -1,4 +1,4 @@
-name: Process YouTube Links in Parallel
+ name: Process YouTube Links in Parallel
 
 on:
   push:
@@ -36,6 +36,15 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
+
+      - name: Cache pip packages
+        id: pip-cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            pip-${{ runner.os }}-
 
       - name: Install dependencies
         run: |
@@ -75,6 +84,8 @@ jobs:
           python output_Json.py
           python processed_dataset.py
           python upload_to_huggingface.py
+
+          echo "Successfully processed link: ${{ matrix.link }}"
 
       - name: Upload error logs as artifact
         if: failure()
