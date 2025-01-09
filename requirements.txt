@@ -5,8 +5,7 @@ datasets
 huggingface_hub
 matplotlib
 pydub
-webvtt-py
 soundfile
 audioread
-webvtt
+webvtt-py
 torch
