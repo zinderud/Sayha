@@ -50,27 +50,40 @@ def download_video_and_subtitles(url):
         'outtmpl': '%(title)s.%(ext)s',
         'quiet': False,
         'no_warnings': False,
-        'extractor_args': {
-            'youtube': {
-                'skip': ['dash', 'hls'],
-                'player_skip': ['js', 'configs', 'webpage']
-            }
-        },
-        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'referer': 'https://www.youtube.com/',
+        # Bot korumasını aşmak için yeni ayarlar
+        'extract_flat': True,
+        'no_check_certificate': True,
+        'ignoreerrors': True,
+        'no_warnings': True,
         'http_headers': {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'en-us,en;q=0.5',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'DNT': '1',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
             'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-User': '?1',
+            'TE': 'trailers'
         }
     }
     
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             print(f"Video indiriliyor: {url}")
-            info = ydl.extract_info(url, download=True)
-            video_title = info['title']
+            # Önce video bilgilerini al
+            info = ydl.extract_info(url, download=False)
+            if info is None:
+                raise Exception("Video bilgileri alınamadı")
+                
+            # Sonra indirme işlemini gerçekleştir
+            ydl_opts['extract_flat'] = False
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl_download:
+                info = ydl_download.extract_info(url, download=True)
+                video_title = info['title']
             
             # Dosya isimlerini bul
             audio_file = None
