@@ -58,6 +58,7 @@ jobs:
           pip install browser-cookie3  # YouTube çerezleri için gerekli
           sudo apt-get update
           sudo apt-get install -y ffmpeg
+          sudo apt-get install -y aria2
 
       - name: Process link
         env:
