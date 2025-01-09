@@ -46,31 +46,16 @@ jobs:
           restore-keys: |
             pip-${{ runner.os }}-
 
-      - name: Install Chrome
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y chromium-browser
-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install browser-cookie3  # YouTube çerezleri için gerekli
           sudo apt-get update
           sudo apt-get install -y ffmpeg
-
-      - name: Setup YouTube cookies
-        run: |
-          echo 'Creating cookies.txt file...'
-          touch cookies.txt
-          echo '.youtube.com	TRUE	/	TRUE	2147483647	CONSENT	YES+1' >> cookies.txt
-          echo '.youtube.com	TRUE	/	TRUE	2147483647	VISITOR_INFO1_LIVE	random_string' >> cookies.txt
-          echo '.youtube.com	TRUE	/	TRUE	2147483647	GPS	1' >> cookies.txt
 
       - name: Process link
         env:
           HUGGINGFACE_TOKEN: ${{ secrets.HUGGINGFACE_TOKEN }}
-          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
         run: |
           echo "Processing link: ${{ matrix.link }}"
 
