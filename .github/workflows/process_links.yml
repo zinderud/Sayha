@@ -3,32 +3,31 @@ name: Process YouTube Links in Parallel
 on:
   push:
     branches:
-      - main  # main branch'e push yapıldığında tetikle
+      - main
     paths:
-      - 'links.txt'  # sadece links.txt değiştiğinde tetikle
+      - 'links.txt'
 
 jobs:
   read-links:
     runs-on: ubuntu-latest
     outputs:
-      links: ${{ steps.read-links.outputs.links }}  # links.txt'den okunan linkler
+      links: ${{ steps.read-links.outputs.links }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3  # Repoyu checkout et
+        uses: actions/checkout@v3
 
       - name: Read links from links.txt
         id: read-links
         run: |
-          # links.txt dosyasını oku ve JSON array'ine dönüştür
           links=$(cat links.txt | grep -v '^$' | jq -R -s -c 'split("\n")')
-          echo "links=$links" >> $GITHUB_OUTPUT  # Çıktıyı diğer job'lara aktar
+          echo "links=$links" >> $GITHUB_OUTPUT
 
   process-links:
-    needs: read-links  # read-links job'unun tamamlanmasını bekler
+    needs: read-links
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        link: ${{ fromJson(needs.read-links.outputs.links) }}  # links.txt'den alınan linkler
+        link: ${{ fromJson(needs.read-links.outputs.links) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -36,38 +35,40 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'  # Python 3.9 kullan
+          python-version: '3.9'
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install yt-dlp librosa transformers datasets huggingface_hub
+          pip install yt-dlp librosa transformers datasets huggingface_hub pydub
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
 
       - name: Process link
         env:
-          HUGGINGFACE_TOKEN: ${{ secrets.HUGGINGFACE_TOKEN }}  # Hugging Face token'ı
+          HUGGINGFACE_TOKEN: ${{ secrets.HUGGINGFACE_TOKEN }}
         run: |
           echo "Processing link: ${{ matrix.link }}"
 
           # Retry mekanizması için maksimum deneme sayısı ve bekleme süresi
           max_retries=3
-          retry_delay=10  # Her deneme arasında 10 saniye bekle
+          retry_delay=10
 
           # youtube_splitter_tr.py için retry mekanizması
           retry_count=0
           while [ $retry_count -lt $max_retries ]; do
             if python youtube_splitter_tr.py "${{ matrix.link }}"; then
-              break  # Başarılı olursa döngüden çık
+              break
             else
               retry_count=$((retry_count + 1))
               echo "Retrying youtube_splitter_tr.py for link ${{ matrix.link }} (Attempt $retry_count)"
-              sleep $retry_delay  # Bekleme süresi ekle
+              sleep $retry_delay
             fi
           done
 
           if [ $retry_count -eq $max_retries ]; then
             echo "Error: Failed to process link ${{ matrix.link }} in youtube_splitter_tr.py after $max_retries attempts"
-            exit 1  # İşi başarısız olarak işaretle
+            exit 1
           fi
 
           # Diğer scriptleri çalıştır
@@ -78,15 +79,15 @@ jobs:
           echo "Successfully processed link: ${{ matrix.link }}"
 
       - name: Upload error logs as artifact
-        if: failure()  # İş başarısız olursa bu adım çalışır
+        if: failure()
         uses: actions/upload-artifact@v3
         with:
-          name: error_logs_${{ matrix.link }}  # Her link için ayrı log dosyası
+          name: error_logs_${{ matrix.link }}
           path: error_logs.txt
 
   notify-failure:
-    needs: process-links  # process-links job'unun tamamlanmasını bekler
-    if: failure()  # Workflow başarısız olursa bu adım çalışır
+    needs: process-links
+    if: failure()
     runs-on: ubuntu-latest
     steps:
       - name: Notify on failure
