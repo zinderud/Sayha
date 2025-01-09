@@ -1,0 +1,94 @@
+name: Process YouTube Links in Parallel
+
+on:
+  push:
+    branches:
+      - main  # main branch'e push yapıldığında tetikle
+    paths:
+      - 'links.txt'  # sadece links.txt değiştiğinde tetikle
+
+jobs:
+  read-links:
+    runs-on: ubuntu-latest
+    outputs:
+      links: ${{ steps.read-links.outputs.links }}  # links.txt'den okunan linkler
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3  # Repoyu checkout et
+
+      - name: Read links from links.txt
+        id: read-links
+        run: |
+          # links.txt dosyasını oku ve JSON array'ine dönüştür
+          links=$(cat links.txt | grep -v '^$' | jq -R -s -c 'split("\n")')
+          echo "links=$links" >> $GITHUB_OUTPUT  # Çıktıyı diğer job'lara aktar
+
+  process-links:
+    needs: read-links  # read-links job'unun tamamlanmasını bekler
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        link: ${{ fromJson(needs.read-links.outputs.links) }}  # links.txt'den alınan linkler
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'  # Python 3.9 kullan
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install yt-dlp librosa transformers datasets huggingface_hub
+
+      - name: Process link
+        env:
+          HUGGINGFACE_TOKEN: ${{ secrets.HUGGINGFACE_TOKEN }}  # Hugging Face token'ı
+        run: |
+          echo "Processing link: ${{ matrix.link }}"
+
+          # Retry mekanizması için maksimum deneme sayısı ve bekleme süresi
+          max_retries=3
+          retry_delay=10  # Her deneme arasında 10 saniye bekle
+
+          # youtube_splitter_tr.py için retry mekanizması
+          retry_count=0
+          while [ $retry_count -lt $max_retries ]; do
+            if python youtube_splitter_tr.py "${{ matrix.link }}"; then
+              break  # Başarılı olursa döngüden çık
+            else
+              retry_count=$((retry_count + 1))
+              echo "Retrying youtube_splitter_tr.py for link ${{ matrix.link }} (Attempt $retry_count)"
+              sleep $retry_delay  # Bekleme süresi ekle
+            fi
+          done
+
+          if [ $retry_count -eq $max_retries ]; then
+            echo "Error: Failed to process link ${{ matrix.link }} in youtube_splitter_tr.py after $max_retries attempts"
+            exit 1  # İşi başarısız olarak işaretle
+          fi
+
+          # Diğer scriptleri çalıştır
+          python output_Json.py
+          python processed_dataset.py
+          python upload_to_huggingface.py
+
+          echo "Successfully processed link: ${{ matrix.link }}"
+
+      - name: Upload error logs as artifact
+        if: failure()  # İş başarısız olursa bu adım çalışır
+        uses: actions/upload-artifact@v3
+        with:
+          name: error_logs_${{ matrix.link }}  # Her link için ayrı log dosyası
+          path: error_logs.txt
+
+  notify-failure:
+    needs: process-links  # process-links job'unun tamamlanmasını bekler
+    if: failure()  # Workflow başarısız olursa bu adım çalışır
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify on failure
+        run: |
+          echo "Workflow failed! Check the logs for more details."
