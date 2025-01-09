@@ -7,5 +7,5 @@ matplotlib
 pydub
 soundfile
 audioread
-webvtt-py
+webvtt
 torch
