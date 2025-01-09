@@ -2,7 +2,7 @@ import os
 import re
 import sys
 from pydub import AudioSegment
-import webvtt
+import webvtt_py as webvtt
 import yt_dlp
 
 def sanitize_filename(text):
