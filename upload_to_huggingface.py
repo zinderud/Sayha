@@ -4,7 +4,23 @@ from datasets import Dataset, Audio, Image
 from huggingface_hub import HfApi
 from dotenv import load_dotenv
 
-def upload_to_huggingface(json_path, repo_name):
+def get_next_file_number():
+    # uploaded_to_huggingface.txt'den son numarayı al
+    if os.path.exists('uploaded_to_huggingface.txt'):
+        with open('uploaded_to_huggingface.txt', 'r', encoding='utf-8') as f:
+            uploaded_files = f.read().splitlines()
+            if uploaded_files:
+                # Son yüklenen dosyanın numarasını bul
+                last_file = uploaded_files[-1]
+                try:
+                    # Dosya adından numarayı çıkar (0000001_processed_dataset.json)
+                    last_number = int(os.path.basename(last_file).split('_')[0])
+                    return last_number + 1
+                except (ValueError, IndexError):
+                    pass
+    return 1
+
+def upload_to_huggingface(json_path, repo_name, file_number):
     # .env dosyasından token'ı yükle
     load_dotenv()
     hf_token = os.getenv('HUGGINGFACE_TOKEN')
@@ -57,12 +73,40 @@ def upload_to_huggingface(json_path, repo_name):
         )
         print(f"Veri seti başarıyla yüklendi: {repo_name}")
         
+        # Yeni dosya adını oluştur
+        new_json_filename = f"{file_number:07d}_processed_dataset.json"
+        new_json_path = os.path.join(os.path.dirname(json_path), new_json_filename)
+        
+        # Dosyayı yeni adıyla kaydet
+        os.rename(json_path, new_json_path)
+        
         # Yüklenen dosyayı kaydet
         with open('uploaded_to_huggingface.txt', 'a', encoding='utf-8') as f:
-            f.write(f"{json_path}\n")
+            f.write(f"{new_json_path}\n")
             
     except Exception as e:
         print(f"Yükleme sırasında hata oluştu: {e}")
+
+def clean_output_directory():
+    """Output klasörünü temizler, alt klasörlerdeki tüm dosyaları siler"""
+    output_dir = "output"
+    subdirs = ['audio', 'json', 'spectrogram']
+    
+    try:
+        for subdir in subdirs:
+            dir_path = os.path.join(output_dir, subdir)
+            if os.path.exists(dir_path):
+                for file in os.listdir(dir_path):
+                    file_path = os.path.join(dir_path, file)
+                    try:
+                        if os.path.isfile(file_path):
+                            os.unlink(file_path)
+                        print(f"Silindi: {file_path}")
+                    except Exception as e:
+                        print(f"Hata: {file_path} silinirken sorun oluştu: {e}")
+        print("Output klasörü temizlendi.")
+    except Exception as e:
+        print(f"Output klasörü temizlenirken hata oluştu: {e}")
 
 if __name__ == "__main__":
     # JSON dosyalarını bul
@@ -74,6 +118,11 @@ if __name__ == "__main__":
     
     if not json_files:
         raise ValueError("İşlenmiş veri seti JSON dosyası bulunamadı!")
+
+    # Bir sonraki dosya numarasını al
+    next_file_number = get_next_file_number()
+    
+    upload_success = True  # Yükleme başarısını takip etmek için
 
     # Her JSON dosyası için
     for json_file in json_files:
@@ -88,8 +137,20 @@ if __name__ == "__main__":
                     continue
 
         # Repo adını oluştur
-        base_name = os.path.splitext(json_file)[0]
-        repo_name = f"turkish-folk-songs-{base_name}"
+        repo_name = f"turkish-folk-songs-{next_file_number:07d}"
         
         print(f"Yükleniyor: {json_path} -> {repo_name}")
-        upload_to_huggingface(json_path, repo_name)
+        try:
+            upload_to_huggingface(json_path, repo_name, next_file_number)
+            next_file_number += 1
+        except Exception as e:
+            print(f"Yükleme hatası: {e}")
+            upload_success = False
+            break
+
+    # Tüm yüklemeler başarılı olduysa output klasörünü temizle
+    if upload_success:
+        print("Tüm yüklemeler başarıyla tamamlandı. Output klasörü temizleniyor...")
+        clean_output_directory()
+    else:
+        print("Bazı yüklemeler başarısız oldu. Output klasörü temizlenmedi.")
