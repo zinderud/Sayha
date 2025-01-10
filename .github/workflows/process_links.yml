@@ -1,0 +1,110 @@
+name: Process YouTube Links in Parallel
+
+off:
+  push:
+    branches:
+      - main
+    paths:
+      - 'links.txt'
+
+jobs:
+  read-links:
+    runs-on: ubuntu-latest
+    outputs:
+      links: ${{ steps.read-links.outputs.links }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Read links from links.txt
+        id: read-links
+        run: |
+          links=$(cat links.txt | grep -v '^[[:space:]]*$' | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "links=$links" >> $GITHUB_OUTPUT
+
+  process-links:
+    needs: read-links
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        link: ${{ fromJson(needs.read-links.outputs.links) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Cache pip packages
+        id: pip-cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            pip-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Install browsers
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y firefox chromium-browser
+
+      - name: Process link
+        env:
+          HUGGINGFACE_TOKEN: ${{ secrets.HUGGINGFACE_TOKEN }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        run: |
+          echo "Processing link: ${{ matrix.link }}"
+
+          # Retry mekanizması için maksimum deneme sayısı ve bekleme süresi
+          max_retries=3
+          retry_delay=10
+
+          # youtube_splitter_tr.py için retry mekanizması
+          retry_count=0
+          while [ $retry_count -lt $max_retries ]; do
+            if python youtube_splitter_tr.py "${{ matrix.link }}"; then
+              break
+            else
+              retry_count=$((retry_count + 1))
+              echo "Retrying youtube_splitter_tr.py for link ${{ matrix.link }} (Attempt $retry_count)"
+              sleep $retry_delay
+            fi
+          done
+
+          if [ $retry_count -eq $max_retries ]; then
+            echo "Error: Failed to process link ${{ matrix.link }} in youtube_splitter_tr.py after $max_retries attempts"
+            exit 1
+          fi
+
+          # Diğer scriptleri çalıştır
+          python output_Json.py
+          python processed_dataset.py
+          python upload_to_huggingface.py
+
+          echo "Successfully processed link: ${{ matrix.link }}"
+
+      - name: Upload error logs as artifact
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: error_logs_${{ matrix.link }}
+          path: error_logs.txt
+
+  notify-failure:
+    needs: process-links
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify on failure
+        run: |
+          echo "Workflow failed! Check the logs for more details."
