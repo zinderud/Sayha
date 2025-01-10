@@ -4,9 +4,6 @@ import sys
 from pydub import AudioSegment
 import webvtt
 import yt_dlp
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
-
 
 def sanitize_filename(text):
     """Dosya isimlerindeki geçersiz karakterleri temizler."""
@@ -38,81 +35,58 @@ def mark_video_as_downloaded(video_id):
 
 def download_video_and_subtitles(url):
     """YouTube'dan video ve altyazı indirir."""
-    # YouTube API anahtarını al
-    api_key = os.getenv('YOUTUBE_API_KEY')
-    if not api_key:
-        raise Exception("YouTube API anahtarı bulunamadı!")
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'writesubtitles': True,
+        'writeautomaticsub': True,
+        'subtitleslangs': ['tr'],
+        'subtitlesformat': 'vtt',
+        'outtmpl': 'video.%(ext)s',
+    }
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info_dict = ydl.extract_info(url, download=True)
+        video_title = info_dict.get('title', 'video')
 
-    # Video ID'yi al
-    video_id = extract_video_id(url)
-    if not video_id:
-        raise Exception("Video ID bulunamadı!")
+        audio_file = None
+        for file in os.listdir():
+            if file.endswith(".mp3") or file.endswith(".webm") or file.endswith(".m4a"):
+                audio_file = file
+                break
 
-    try:
-        # YouTube API client'ını oluştur
-        youtube = build('youtube', 'v3', developerKey=api_key)
-        
-        # Video detaylarını al
-        request = youtube.videos().list(
-            part="snippet",
-            id=video_id
-        )
-        response = request.execute()
-        
-        if not response['items']:
-            raise Exception("Video bulunamadı!")
-        
-        # yt-dlp ayarları
-        ydl_opts = {
-            'format': 'bestaudio/best',
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': '192',
-            }],
-            'writesubtitles': True,
-            'writeautomaticsub': True,
-            'subtitleslangs': ['tr'],
-            'subtitlesformat': 'vtt',
-            'outtmpl': '%(title)s.%(ext)s',
-            'quiet': False,
-            'no_warnings': False,
-            'extract_flat': True,
-            'force_generic_extractor': False,
-            'http_headers': {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                'Accept-Language': 'en-US,en;q=0.5',
+        subtitle_file = None
+        for file in os.listdir():
+            if file.endswith(".vtt") and "tr" in file:
+                subtitle_file = file
+                break
+
+        if not subtitle_file:
+            print("Türkçe altyazı bulunamadı. Otomatik altyazı Türkçe'ye çevriliyor...")
+            ydl_opts_auto = {
+                'format': 'bestaudio/best',
+                'writeautomaticsub': True,
+                'subtitleslangs': ['tr'],
+                'subtitlesformat': 'vtt',
+                'outtmpl': 'video.%(ext)s',
             }
-        }
-        
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            print(f"Video indiriliyor: {url}")
-            info = ydl.extract_info(url, download=True)
-            video_title = response['items'][0]['snippet']['title']
-            
-            # Dosya isimlerini bul
-            audio_file = None
-            subtitle_file = None
+            with yt_dlp.YoutubeDL(ydl_opts_auto) as ydl_auto:
+                ydl_auto.download([url])
             
             for file in os.listdir():
-                if file.endswith(".mp3"):
-                    audio_file = file
-                elif file.endswith(".tr.vtt"):
+                if file.endswith(".vtt") and "tr" in file:
                     subtitle_file = file
-            
-            if not audio_file or not subtitle_file:
-                print(f"Ses dosyası: {audio_file}")
-                print(f"Altyazı dosyası: {subtitle_file}")
-                raise Exception("Ses veya altyazı dosyası bulunamadı")
-                
-            return audio_file, subtitle_file, video_title
-            
-    except Exception as e:
-        print(f"Hata oluştu: {str(e)}")
-        return None, None, None
+                    break
 
-def split_audio_by_subtitles(audio_file, subtitle_file, folder_name):
+        if not audio_file:
+            print("Hata: Ses dosyası bulunamadı!")
+        elif not subtitle_file:
+            print("Hata: Türkçe altyazı dosyası bulunamadı!")
+        else:
+            print(f"Ses dosyası bulundu: {audio_file}")
+            print(f"Altyazı dosyası bulundu: {subtitle_file}")
+
+    return audio_file, subtitle_file, video_title
+
+def split_audio_by_subtitles(audio_file, subtitle_file, video_id):
     """Ses dosyasını altyazı aralıklarına göre böler ve kaydeder."""
     if not subtitle_file or not os.path.exists(subtitle_file):
         print("Hata: Altyazı dosyası bulunamadı. İşlem iptal edildi.")
@@ -125,17 +99,24 @@ def split_audio_by_subtitles(audio_file, subtitle_file, folder_name):
     subs = webvtt.read(subtitle_file)
     audio = AudioSegment.from_file(audio_file)
 
-    output_folder = os.path.join("output", folder_name)
-    if not os.path.exists(output_folder):
-        os.makedirs(output_folder)
+    output_dir = os.path.join('output', 'audio', video_id)
+    os.makedirs(output_dir, exist_ok=True)
 
     for i, sub in enumerate(subs):
         start_time = int(sub.start_in_seconds * 1000)
         end_time = int(sub.end_in_seconds * 1000)
-
+        
+        # Çok kısa segmentleri atla
+        if end_time - start_time < 500:  # 500ms'den kısa segmentleri atla
+            continue
+            
         segment = audio[start_time:end_time]
-        filename = f"{i+1:03d}_{sanitize_filename(sub.text)}.mp3"
-        output_path = os.path.join(output_folder, filename)
+        text = sub.text
+        output_filename = f"{str(i).zfill(3)}_{text[:100]}"
+        output_filename = re.sub(r'[<>:"/\\|?*\']', '', output_filename)
+        output_filename = output_filename.replace(' ', '_')
+        
+        output_path = os.path.join(output_dir, f"{output_filename}.mp3")
 
         print(f"Exporting: {output_path}")
         segment.export(output_path, format="mp3")
