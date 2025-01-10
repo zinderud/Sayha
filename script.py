@@ -5,7 +5,7 @@ import sys
 def run_youtube_splitter(youtube_url):
     """youtube_splitter_tr.py programını çalıştırır."""
     try:
-        subprocess.run(["python", "youtube_splitter_tr.py", youtube_url], check=True)
+        subprocess.run([sys.executable, "youtube_splitter_tr.py", youtube_url], check=True)
     except subprocess.CalledProcessError as e:
         print(f"Hata: youtube_splitter_tr.py çalıştırılırken bir sorun oluştu. Hata mesajı: {e}")
         sys.exit(1)
@@ -13,7 +13,7 @@ def run_youtube_splitter(youtube_url):
 def run_output_json():
     """output_Json.py programını çalıştırır."""
     try:
-        subprocess.run(["python", "output_Json.py"], check=True)
+        subprocess.run([sys.executable, "output_Json.py"], check=True)
     except subprocess.CalledProcessError as e:
         print(f"Hata: output_Json.py çalıştırılırken bir sorun oluştu. Hata mesajı: {e}")
         sys.exit(1)
@@ -21,7 +21,7 @@ def run_output_json():
 def run_processed_dataset():
     """processed_dataset.py programını çalıştırır."""
     try:
-        subprocess.run(["python", "processed_dataset.py"], check=True)
+        subprocess.run([sys.executable, "processed_dataset.py"], check=True)
     except subprocess.CalledProcessError as e:
         print(f"Hata: processed_dataset.py çalıştırılırken bir sorun oluştu. Hata mesajı: {e}")
         sys.exit(1)
@@ -29,7 +29,7 @@ def run_processed_dataset():
 def run_upload_to_huggingface():
     """upload_to_huggingface.py programını çalıştırır."""
     try:
-        subprocess.run(["python", "upload_to_huggingface.py"], check=True)
+        subprocess.run([sys.executable, "upload_to_huggingface.py"], check=True)
     except subprocess.CalledProcessError as e:
         print(f"Hata: upload_to_huggingface.py çalıştırılırken bir sorun oluştu. Hata mesajı: {e}")
         sys.exit(1)

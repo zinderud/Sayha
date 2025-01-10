@@ -86,40 +86,76 @@ def download_video_and_subtitles(url):
 
     return audio_file, subtitle_file, video_title
 
+def clean_filename(filename):
+    """Dosya adındaki geçersiz karakterleri temizler"""
+    # Yeni satır karakterlerini boşlukla değiştir
+    filename = filename.replace('\n', ' ')
+    
+    # Windows'da dosya adında kullanılamayan karakterleri temizle
+    invalid_chars = '<>:"/\\|?*'
+    for char in invalid_chars:
+        filename = filename.replace(char, '')
+    
+    # Noktalama işaretlerini kontrol et
+    filename = filename.replace('.', '_')
+    
+    # Birden fazla boşluğu tek boşluğa indir
+    filename = ' '.join(filename.split())
+    
+    # Boşlukları alt çizgi ile değiştir
+    filename = filename.replace(' ', '_')
+    
+    return filename
+
+def webvtt_to_milliseconds(time_str):
+    """WebVTT zaman formatını milisaniyeye çevirir"""
+    h, m, s = time_str.split(':')
+    s, ms = s.split('.')
+    total_ms = (int(h) * 3600 + int(m) * 60 + int(s)) * 1000 + int(ms)
+    return total_ms
+
 def split_audio_by_subtitles(audio_file, subtitle_file, video_id):
-    """Ses dosyasını altyazı aralıklarına göre böler ve kaydeder."""
-    if not subtitle_file or not os.path.exists(subtitle_file):
-        print("Hata: Altyazı dosyası bulunamadı. İşlem iptal edildi.")
-        return
-
-    if not audio_file or not os.path.exists(audio_file):
-        print("Hata: Ses dosyası bulunamadı. İşlem iptal edildi.")
-        return
-
-    subs = webvtt.read(subtitle_file)
-    audio = AudioSegment.from_file(audio_file)
-
-    output_dir = os.path.join('output', 'audio', video_id)
-    os.makedirs(output_dir, exist_ok=True)
-
-    for i, sub in enumerate(subs):
-        start_time = int(sub.start_in_seconds * 1000)
-        end_time = int(sub.end_in_seconds * 1000)
+    """Ses dosyasını altyazılara göre böler."""
+    try:
+        # Ses dosyasını yükle
+        audio = AudioSegment.from_file(audio_file)
         
-        # Çok kısa segmentleri atla
-        if end_time - start_time < 500:  # 500ms'den kısa segmentleri atla
-            continue
-            
-        segment = audio[start_time:end_time]
-        text = sub.text
-        output_filename = f"{str(i).zfill(3)}_{text[:100]}"
-        output_filename = re.sub(r'[<>:"/\\|?*\']', '', output_filename)
-        output_filename = output_filename.replace(' ', '_')
-        
-        output_path = os.path.join(output_dir, f"{output_filename}.mp3")
+        # Çıktı klasörünü oluştur
+        output_dir = os.path.join("output", "audio", video_id)
+        os.makedirs(output_dir, exist_ok=True)
 
-        print(f"Exporting: {output_path}")
-        segment.export(output_path, format="mp3")
+        # Altyazı dosyasını doğrudan oku
+        subtitles = webvtt.read(subtitle_file)
+
+        # Her altyazı için ses dosyasını böl
+        for i, caption in enumerate(subtitles):
+            try:
+                start_time = webvtt_to_milliseconds(caption.start)
+                end_time = webvtt_to_milliseconds(caption.end)
+                
+                # Çok kısa segmentleri atla
+                if end_time - start_time < 500:  # 500ms'den kısa segmentleri atla
+                    continue
+                
+                # Ses segmentini kes
+                segment = audio[start_time:end_time]
+                
+                # Dosya adını oluştur
+                text = clean_filename(caption.text)
+                output_filename = f"{i:03d}_{text}.mp3"
+                output_path = os.path.join(output_dir, output_filename)
+                
+                # Ses segmentini kaydet
+                segment.export(output_path, format="mp3")
+                print(f"Kaydedildi: {output_path}")
+                
+            except Exception as e:
+                print(f"Uyarı: Segment {i} işlenirken hata oluştu: {e}")
+                continue
+
+    except Exception as e:
+        print(f"Hata: Ses bölme işlemi sırasında bir sorun oluştu: {e}")
+        raise
 
 def delete_temp_files(audio_file, subtitle_file):
     """Geçici dosyaları (video ve altyazı) siler."""
