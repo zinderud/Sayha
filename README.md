@@ -60,4 +60,6 @@ Spektrogram veya MFCC özelliklerini bir sinir ağına girdi olarak verebilirsin
 Tokenize edilmiş metinleri, metin üretme veya dil modeli eğitimi için kullanabilirsiniz.
 
 ## Kalan aşamalar
-Bu videoları hiç indirmeden  github actions kullanılarak  sadece linkleri vereceğimiz bir txt dosyasını commitleyip bunları otomatik olarak    huggingface  göndermek
+Bu videoları hiç indirmeden  github actions kullanılarak   çalışmadı.
+
+https://colab.research.google.com/drive/1wUciVKTYiM3dAAVw0fnVlxDJNT99jHmN?usp=sharing
