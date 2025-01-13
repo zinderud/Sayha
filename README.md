@@ -1,7 +1,7 @@
 # Sayha
 youtube videolarını indirir, alt yazılarına göre video_ismi örnek "Ahmet'e gelen dürüm" ---- ahmet-e_gelen_durum.mp3 olarak parçalar.
 
-
+https://colab.research.google.com/github/zinderud/Sayha/blob/main/youtube_to_huggingface.ipynb
 
 ## Amac
 Oluşturulcak Türkce dil modeli için kaynak oluşturmak.
@@ -62,4 +62,4 @@ Tokenize edilmiş metinleri, metin üretme veya dil modeli eğitimi için kullan
 ## Kalan aşamalar
 Bu videoları hiç indirmeden  github actions kullanılarak   çalışmadı.
 
-https://colab.research.google.com/drive/1wUciVKTYiM3dAAVw0fnVlxDJNT99jHmN?usp=sharing
+https://colab.research.google.com/github/zinderud/Sayha/blob/main/youtube_to_huggingface.ipynb
