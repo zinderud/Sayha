@@ -21,15 +21,12 @@ def get_next_file_number():
                     pass
     return 1
 
-def upload_to_huggingface(json_path, repo_name=None, video_id=None):
+def upload_to_huggingface(json_path,  video_id=None):
     load_dotenv()
     hf_token = os.getenv('HUGGINGFACE_TOKEN')
-    
+    repo_name = "sadece/sayha" 
     # Repository adını belirle
-    if repo_name is None:
-        repo_name = os.getenv('HUGGINGFACE_REPO')  # Önce env'den kontrol et
-        if not repo_name:
-            repo_name = "sadece/sayha"  # Default değer
+  
     
     if not hf_token:
         raise ValueError("HUGGINGFACE_TOKEN bulunamadı. Lütfen .env dosyasını kontrol edin.")
@@ -182,13 +179,12 @@ if __name__ == "__main__":
         # Video ID'yi dosya adından al
         video_id = get_video_id_from_filename(json_file)
         load_dotenv()
-        hf_repo = os.getenv('HUGGINGFACE_REPO') 
-        # Repo adını oluştur
-        repo_name = hf_repo
+      
+         
         
-        print(f"Yükleniyor: {json_path} -> {repo_name}")
+        
         try:
-            upload_to_huggingface(json_path, repo_name, video_id)
+            upload_to_huggingface(json_path, video_id)
         except Exception as e:
             print(f"Yükleme hatası: {e}")
             upload_success = False

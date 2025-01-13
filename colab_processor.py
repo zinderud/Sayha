@@ -53,10 +53,8 @@ def process_youtube_video(youtube_url):
         subprocess.run(['python', 'processed_dataset.py'], check=True)
         
         # Repository adını al
-        repo_name = os.getenv('HUGGINGFACE_REPO')
-        if not repo_name:
-            print("UYARI: Repository adı bulunamadı, varsayılan değer kullanılacak")
-        
+        repo_name = "sadece/sayha" 
+       
         # Hugging Face'e yükle
         subprocess.run(['python', 'upload_to_huggingface.py'], check=True)
         
@@ -75,11 +73,9 @@ def set_hf_credentials():
     token = getpass('Hugging Face Token: ')
     os.environ['HUGGINGFACE_TOKEN'] = token
     
-    repo = input('Hugging Face Repository Adı (örn: kullanıcı_adı/repo_adı): ')
-    os.environ['HUGGINGFACE_REPO'] = repo
+    repo =  "sadece/sayha" 
     
-    print(f"\nAyarlanan repository: {repo}")
-
+ 
 def main():
     print("YouTube'dan Hugging Face'e Veri Seti Yükleme Aracı")
     print("-" * 50)
