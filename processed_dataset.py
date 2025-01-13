@@ -22,8 +22,12 @@ os.makedirs(spectrogram_output_folder, exist_ok=True)
 # Veri setini tutacak liste
 dataset = []
 
-# Video kimliğini al (örneğin, klasör adından)
-video_id = os.path.basename(os.path.normpath(input_folder))
+# Video klasörünü bul (output/audio altındaki ilk klasör)
+audio_folders = [f for f in os.listdir(os.path.join(input_folder, "audio")) if os.path.isdir(os.path.join(input_folder, "audio", f))]
+if not audio_folders:
+    raise ValueError("Audio klasöründe video klasörü bulunamadı!")
+
+video_id = audio_folders[0]  # İlk klasörü al (video_id)
 
 # Klasörleri ve dosyaları tarama
 for root, dirs, files in os.walk(input_folder):
@@ -82,10 +86,8 @@ for root, dirs, files in os.walk(input_folder):
             except Exception as e:
                 print(f"Hata: {audio_path} işlenirken bir sorun oluştu. Hata mesajı: {e}")
 
-# JSON dosyası için sıralı bir isim oluştur
-existing_json_files = [f for f in os.listdir(json_output_folder) if f.endswith(".json")]
-next_file_number = len(existing_json_files) + 1
-output_json_filename = f"{next_file_number:07d}_processed_dataset.json"
+# JSON dosyasını video_id ile kaydet
+output_json_filename = f"{video_id}_processed_dataset.json"
 output_json_path = os.path.join(json_output_folder, output_json_filename)
 
 # Veri setini JSON dosyası olarak kaydet
@@ -94,4 +96,4 @@ with open(output_json_path, "w", encoding="utf-8") as f:
 
 print(f"Toplam {len(dataset)} ses dosyası işlendi.")
 print(f"Spektrogramlar '{spectrogram_output_folder}' klasörüne kaydedildi.")
-print(f"JSON dosyası '{json_output_folder}' klasörüne kaydedildi.")
+print(f"JSON dosyası '{output_json_path}' olarak kaydedildi.")
