@@ -52,6 +52,11 @@ def process_youtube_video(youtube_url):
         # Veri setini işle
         subprocess.run(['python', 'processed_dataset.py'], check=True)
         
+        # Repository adını al
+        repo_name = os.getenv('HUGGINGFACE_REPO')
+        if not repo_name:
+            print("UYARI: Repository adı bulunamadı, varsayılan değer kullanılacak")
+        
         # Hugging Face'e yükle
         subprocess.run(['python', 'upload_to_huggingface.py'], check=True)
         
