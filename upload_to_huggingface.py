@@ -29,7 +29,7 @@ def upload_to_huggingface(json_path, repo_name, video_id):
         raise ValueError("HUGGINGFACE_TOKEN bulunamadı. Lütfen .env dosyasını kontrol edin.")
      # Eğer repo_name parametre olarak verilmemişse, .env'den al
     if repo_name is None:
-        repo_name = os.getenv('HUGGINGFACE_REPO', 'sadece/sayha')
+        repo_name =  "sayha"
     try:
         # Repository'yi kontrol et veya oluştur
         api = HfApi()
