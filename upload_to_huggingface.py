@@ -5,28 +5,27 @@ from datasets import Dataset, Audio, Image, concatenate_datasets, load_dataset
 from huggingface_hub import HfApi
 from dotenv import load_dotenv
 
-def get_next_file_number():
-    # uploaded_to_huggingface.txt'den son numarayı al
-    if os.path.exists('uploaded_to_huggingface.txt'):
-        with open('uploaded_to_huggingface.txt', 'r', encoding='utf-8') as f:
-            uploaded_files = f.read().splitlines()
-            if uploaded_files:
-                # Son yüklenen dosyanın numarasını bul
-                last_file = uploaded_files[-1]
-                try:
-                    # Dosya adından numarayı çıkar (0000001_processed_dataset.json)
-                    last_number = int(os.path.basename(last_file).split('_')[0])
-                    return last_number + 1
-                except (ValueError, IndexError):
-                    pass
-    return 1
-
-def upload_to_huggingface(json_path, repo_name, video_id):
+def upload_to_huggingface(json_path, repo_name=None, video_id=None):
+    """
+    Veri setini Hugging Face'e yükler.
+    
+    Args:
+        json_path: İşlenmiş veri setinin JSON dosya yolu
+        repo_name: Hugging Face repository adı (opsiyonel)
+        video_id: Video ID (opsiyonel)
+    """
     load_dotenv()
     hf_token = os.getenv('HUGGINGFACE_TOKEN')
     
+    # Eğer repo_name parametre olarak verilmemişse, .env'den al
+    if repo_name is None:
+        repo_name = os.getenv('HUGGINGFACE_REPO', 'sadece/sayha')
+    
     if not hf_token:
         raise ValueError("HUGGINGFACE_TOKEN bulunamadı. Lütfen .env dosyasını kontrol edin.")
+    
+    if not repo_name:
+        raise ValueError("Repository adı belirtilmemiş!")
 
     try:
         # Repository'yi kontrol et veya oluştur
@@ -57,7 +56,7 @@ def upload_to_huggingface(json_path, repo_name, video_id):
                 print(f"Uyarı: Dosya bulunamadı, bu örnek atlanıyor: {item['audio_file']}")
                 continue
 
-            new_dataset_dict['id'].append(f"{video_id}_{idx:03d}")
+            new_dataset_dict['id'].append(f"{video_id}_{idx:03d}" if video_id else f"sample_{idx:03d}")
             new_dataset_dict['audio'].append(item['audio_file'])
             new_dataset_dict['transcription'].append(item['transcription'])
             new_dataset_dict['spectrogram'].append(item['spectrogram'])
@@ -155,38 +154,10 @@ if __name__ == "__main__":
     if not json_files:
         raise ValueError("İşlenmiş veri seti JSON dosyası bulunamadı!")
 
-    upload_success = True  # Yükleme başarısını takip etmek için değişken
-
     # Her JSON dosyası için
     for json_file in json_files:
         json_path = os.path.join(json_folder, json_file)
+        video_id = json_file.split('_processed_dataset.json')[0]
         
-        # Daha önce yüklenip yüklenmediğini kontrol et
-        if os.path.exists('uploaded_to_huggingface.txt'):
-            with open('uploaded_to_huggingface.txt', 'r', encoding='utf-8') as f:
-                uploaded_files = f.read().splitlines()
-                if json_path in uploaded_files:
-                    print(f"Bu dosya zaten yüklenmiş, atlanıyor: {json_path}")
-                    continue
-
-        # Video ID'yi dosya adından al
-        video_id = get_video_id_from_filename(json_file)
-        load_dotenv()
-        hf_repo = os.getenv('HUGGINGFACE_REPO') 
-        # Repo adını oluştur
-        repo_name = hf_repo
-        
-        print(f"Yükleniyor: {json_path} -> {repo_name}")
-        try:
-            upload_to_huggingface(json_path, repo_name, video_id)
-        except Exception as e:
-            print(f"Yükleme hatası: {e}")
-            upload_success = False
-            break
-
-    # Tüm yüklemeler başarılı olduysa output klasörünü temizle
-    if upload_success:
-        print("Tüm yüklemeler başarıyla tamamlandı. Output klasörü temizleniyor...")
-        clean_output_directory()
-    else:
-        print("Bazı yüklemeler başarısız oldu. Output klasörü temizlenmedi.")
+        print(f"Yükleniyor: {json_path}")
+        upload_to_huggingface(json_path, video_id=video_id)

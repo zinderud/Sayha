@@ -65,6 +65,16 @@ def process_youtube_video(youtube_url):
             path = f'/content/output/{folder}/'
             subprocess.run(['rm', '-rf', path + '*'])
 
+# Hugging Face token ve repo bilgilerini al
+def set_hf_credentials():
+    token = getpass('Hugging Face Token: ')
+    os.environ['HUGGINGFACE_TOKEN'] = token
+    
+    repo = input('Hugging Face Repository Adı (örn: kullanıcı_adı/repo_adı): ')
+    os.environ['HUGGINGFACE_REPO'] = repo
+    
+    print(f"\nAyarlanan repository: {repo}")
+
 def main():
     print("YouTube'dan Hugging Face'e Veri Seti Yükleme Aracı")
     print("-" * 50)
@@ -79,8 +89,8 @@ def main():
     print("\n3. Scriptler indiriliyor...")
     download_scripts()
     
-    print("\n4. Hugging Face token'ı ayarlanıyor...")
-    set_hf_token()
+    print("\n4. Hugging Face bilgileri ayarlanıyor...")
+    set_hf_credentials()
     
     # YouTube URL'sini al
     print("\n5. YouTube video işleme")
