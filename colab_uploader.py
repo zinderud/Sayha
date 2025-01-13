@@ -19,9 +19,9 @@ os.environ['HUGGINGFACE_TOKEN'] = 'your_token_here'  # Token'ınızı buraya yaz
 !mkdir -p /content/output/spectrogram
 
 # GitHub'dan dosyaları indir
-!wget https://raw.githubusercontent.com/your_username/your_repo/main/youtube_splitter_tr.py
-!wget https://raw.githubusercontent.com/your_username/your_repo/main/processed_dataset.py
-!wget https://raw.githubusercontent.com/your_username/your_repo/main/upload_to_huggingface.py
+!wget https://raw.githubusercontent.com/zinderud/sayha/main/youtube_splitter_tr.py
+!wget https://raw.githubusercontent.com/zinderud/sayha/main/processed_dataset.py
+!wget https://raw.githubusercontent.com/zinderud/sayha/main/upload_to_huggingface.py
 
 def process_youtube_video(youtube_url):
     try:

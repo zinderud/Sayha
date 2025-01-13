@@ -36,9 +36,9 @@ def create_directories():
 # İşlem scriptlerini indir
 def download_scripts():
     scripts = {
-        'youtube_splitter_tr.py': 'https://raw.githubusercontent.com/your_username/your_repo/main/youtube_splitter_tr.py',
-        'processed_dataset.py': 'https://raw.githubusercontent.com/your_username/your_repo/main/processed_dataset.py',
-        'upload_to_huggingface.py': 'https://raw.githubusercontent.com/your_username/your_repo/main/upload_to_huggingface.py'
+        'youtube_splitter_tr.py': 'https://raw.githubusercontent.com/zinderud/sayha/main/youtube_splitter_tr.py',
+        'processed_dataset.py': 'https://raw.githubusercontent.com/zinderud/sayha/main/processed_dataset.py',
+        'upload_to_huggingface.py': 'https://raw.githubusercontent.com/zinderud/sayha/main/upload_to_huggingface.py'
     }
     for filename, url in scripts.items():
         subprocess.run(['wget', '-O', filename, url])
