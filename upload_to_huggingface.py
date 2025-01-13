@@ -24,14 +24,17 @@ def get_next_file_number():
 def upload_to_huggingface(json_path,  video_id=None):
     load_dotenv()
     hf_token = os.getenv('HUGGINGFACE_TOKEN')
-    repo_name = "sadece/sayha" 
-    # Repository adını belirle
-  
     
+    # Repository adını doğrudan belirle
+    repo_name = "sadece/sayha"  # Sabit repository adı
+    
+    if not repo_name:
+        raise ValueError("Repository adı belirtilmemiş")
+        
     if not hf_token:
         raise ValueError("HUGGINGFACE_TOKEN bulunamadı. Lütfen .env dosyasını kontrol edin.")
     
-    print(f"Kullanılan repository: {repo_name}")  # Debug için repository adını yazdır
+    print(f"Kullanılan repository: {repo_name}")
     
     try:
         # Repository'yi kontrol et veya oluştur
