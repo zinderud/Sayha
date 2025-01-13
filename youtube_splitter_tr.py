@@ -36,12 +36,16 @@ def mark_video_as_downloaded(video_id):
 def download_video_and_subtitles(url):
     """YouTube'dan video ve altyazı indirir."""
     ydl_opts = {
-        'format': 'bestaudio/best',
+        'format': 'bestaudio[language=tr]/bestaudio/best',
         'writesubtitles': True,
         'writeautomaticsub': True,
         'subtitleslangs': ['tr'],
         'subtitlesformat': 'vtt',
         'outtmpl': 'video.%(ext)s',
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+        }],
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info_dict = ydl.extract_info(url, download=True)
