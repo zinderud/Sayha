@@ -1,4 +1,7 @@
 # Sayha
+demeo
+https://huggingface.co/datasets/sadece/sayha/
+
 youtube videolarını indirir, alt yazılarına göre video_ismi örnek "Ahmet'e gelen dürüm" ---- ahmet-e_gelen_durum.mp3 olarak parçalar.
 
 https://colab.research.google.com/github/zinderud/Sayha/blob/main/youtube_to_huggingface.ipynb
